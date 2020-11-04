@@ -5,10 +5,11 @@ def exportCSV(file):
         lines = f.readlines()
         for line in lines:
             i = 0
-            query = '''USING PERIODIC COMMIT LOAD CSV WITH HEADERS FROM \"file:///Users/sarvani/Desktop/workspace/chembl/Csv_files/'''
+            #query = '''USING PERIODIC COMMIT LOAD CSV WITH HEADERS FROM \"file:///Users/sarvani/Desktop/workspace/chembl/Csv_files/'''
+            query = '''USING PERIODIC COMMIT LOAD CSV WITH HEADERS FROM \"file:///home/ubuntu/data2/chembl/ChEMBL/'''
             for word in line.split():
                 if i==0:
-                    query = query + word + ".csv\" AS row FIELDTERMINATOR ';' CREATE (:"+word+"{"
+                    query = query + word + ".csv\" AS row FIELDTERMINATOR '\t' CREATE (:"+word+"{"
                     i=i+1
                 else:
                     query = query + word + ":row." + word + ", "
@@ -19,12 +20,12 @@ def exportCSV(file):
 
 def deleteProcessed():
     query = "match (n:processed) with n limit 100000 remove n:processed return count(*) as processed"
-        if query != "":
+    if query != "":
+        values = graph.run(query).data()
+        value = values[0]["processed"]
+        while(value==100000):
             values = graph.run(query).data()
             value = values[0]["processed"]
-            while(value==100000):
-                values = graph.run(query).data()
-                value = values[0]["processed"]
 
 def relationships():
     csv = []
@@ -52,30 +53,32 @@ def relationships():
                     for key in range(0, len(keys)):
                         if keys[key] == word and csv[key]!=file:
                             query = "MATCH (a:"+csv[key] + ") WITH a MATCH (p:" + file + "{" + word + ": a." + word +"} ) WHERE NOT p:processed WITH a, p LIMIT 100000 MERGE (p) - [:child_of] -> (a) SET p:processed RETURN COUNT(*) AS processed"
+                            print(query)
                             values = graph.run(query).data()
+                            print(values)
                             value = values[0]["processed"]
-                            print value
+                            print(value)
                             while(value==100000):
-                                print value
+                                print(value)
                                 values = graph.run(query).data()
                                 value = values[0]["processed"]
-                            print value
+                            print(value)
                             deleteProcessed()
-                            print "Deleted processed"
-                            print csv[key] + word
+                            print("Deleted processed")
+                            print(csv[key] + word)
 
 def delete():
     query = "MATCH ()-[r:child_of]-() with r limit 100000 DELETE r return count(r) as deletedrelations"
-        if query != "":
+    if query != "":
+        values = graph.run(query).data()
+        value = values[0]["deletedrelations"]
+        while(value==100000):
             values = graph.run(query).data()
             value = values[0]["deletedrelations"]
-            while(value==100000):
-                values = graph.run(query).data()
-                value = values[0]["deletedrelations"]
-                print value
-            print "deleted"
+            print(value)
+        print("deleted")
 
 graph = Graph()
-exportCSV("sch.txt")
+#exportCSV("sch.txt")
 relationships()
 #delete()
